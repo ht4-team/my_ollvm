@@ -1,0 +1,11 @@
+--- a/obfuscator.patch
++++ b/obfuscator.patch
+@@ -7,7 +7,7 @@
+  option(LLVM_ENABLE_LLVM_LIBC "Set to on to link all LLVM executables against LLVM libc, assuming it is accessible by the host compiler." OFF)
+  option(LLVM_STATIC_LINK_CXX_STDLIB "Statically link the standard library." OFF)
+ -option(LLVM_ENABLE_LLD "Use lld as C and C++ linker." OFF)
+-+option(LLVM_ENABLE_LLD "Use lld as C and C++ linker." ON)
+++option(LLVM_ENABLE_LLD "Use lld as C and C++ linker." OFF)
+  option(LLVM_ENABLE_PEDANTIC "Compile with pedantic enabled." ON)
+  option(LLVM_ENABLE_WERROR "Fail and stop if a warning is triggered." OFF)
+  
