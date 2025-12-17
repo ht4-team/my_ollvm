@@ -1,0 +1,55 @@
+name: test
+
+on:
+  workflow_run:
+    workflows: ["build"]
+    types:
+      - completed
+
+env:
+  REGISTRY_IMAGE: zhangdafei1995/my_ollvm
+
+jobs:
+  smoke:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Pull image
+        run: docker pull ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+
+      - name: Linux glibc and musl smoke tests
+        run: >-
+          docker run --rm -v ${{ github.workspace }}/tests:/tests
+          ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+          bash -lc "set -euo pipefail;
+          clang /tests/linux_glibc.c -O2 -o /tmp/linux_glibc && /tmp/linux_glibc;
+          clang --target=x86_64-linux-musl --sysroot /usr/x86_64-linux-musl -static /tests/linux_glibc.c -O2 -o /tmp/linux_musl && /tmp/linux_musl"
+
+      - name: Windows mingw smoke test
+        run: >-
+          docker run --rm -v ${{ github.workspace }}/tests:/tests
+          ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+          bash -lc "set -euo pipefail;
+          x86_64-w64-mingw32-clang /tests/windows_hello.c -O2 -o /tmp/hello.exe -luser32;
+          llvm-readobj -file-headers /tmp/hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
+
+      - name: Rust toolchain smoke tests
+        run: >-
+          docker run --rm -v ${{ github.workspace }}/tests:/tests
+          ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+          bash -lc "set -euo pipefail;
+          cd /tests/rust;
+          cargo build --target x86_64-unknown-linux-musl --release;
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=/opt/llvm-mingw/bin/x86_64-w64-mingw32-clang cargo build --target x86_64-pc-windows-gnu --release"
