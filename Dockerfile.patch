@@ -1,30 +1,31 @@
---- a/Dockerfile
-+++ b/Dockerfile
-@@
--RUN apt-get update -qq && \
--    DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends \
--    git wget bzip2 file unzip libtool pkg-config cmake build-essential \
--    automake yasm gettext autopoint vim-tiny python3 python3-distutils \
+--- llvm-mingw-base/Dockerfile
++++ llvm-mingw-new/Dockerfile
+@@ -4,7 +4,9 @@
+     DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends \
+     git wget bzip2 file unzip libtool pkg-config cmake build-essential \
+     automake yasm gettext autopoint vim-tiny python3 python3-distutils \
 -    ninja-build ca-certificates curl less zip && \
-+RUN apt-get update -qq && \
-+    DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends \
-+    git wget bzip2 file unzip libtool pkg-config cmake build-essential \
-+    automake yasm gettext autopoint vim-tiny python3 python3-distutils \
 +    ninja-build ca-certificates curl less zip musl-dev musl-tools \
 +    zlib1g-dev libxml2-dev libedit-dev libncurses-dev libffi-dev libssl-dev \
 +    rsync xz-utils patchelf && \
      apt-get clean -y && \
      rm -rf /var/lib/apt/lists/*
-@@
--ENV TOOLCHAIN_PREFIX=/opt/llvm-mingw
-+ENV TOOLCHAIN_PREFIX=/opt/llvm-mingw
+ 
+@@ -15,6 +17,9 @@
+ WORKDIR /build
+ 
+ ENV TOOLCHAIN_PREFIX=/opt/llvm-mingw
 +ENV LINUX_LLVM_PREFIX=/opt/ollvm-linux
 +ENV RUSTUP_HOME=/opt/rustup
 +ENV CARGO_HOME=/opt/cargo
-@@
--# Build everything that uses the llvm monorepo. We need to build the mingw runtime before the compiler-rt/libunwind/libcxxabi/libcxx runtimes.
+ 
+ ARG TOOLCHAIN_ARCHS="i686 x86_64 armv7 aarch64"
+ 
+@@ -23,9 +28,10 @@
+ ARG CFGUARD_ARGS=--enable-cfguard
+ 
+ # Build everything that uses the llvm monorepo. We need to build the mingw runtime before the compiler-rt/libunwind/libcxxabi/libcxx runtimes.
 -COPY build-llvm.sh build-lldb-mi.sh strip-llvm.sh install-wrappers.sh build-mingw-w64.sh build-mingw-w64-tools.sh build-compiler-rt.sh build-libcxx.sh build-mingw-w64-libraries.sh build-openmp.sh ./
-+# Build everything that uses the llvm monorepo. We need to build the mingw runtime before the compiler-rt/libunwind/libcxxabi/libcxx runtimes.
 +COPY obfuscator.patch build-host-ollvm.sh build-llvm.sh build-lldb-mi.sh strip-llvm.sh install-wrappers.sh build-mingw-w64.sh build-mingw-w64-tools.sh build-compiler-rt.sh build-libcxx.sh build-mingw-w64-libraries.sh build-openmp.sh ./
  COPY wrappers/*.sh wrappers/*.c wrappers/*.h ./wrappers/
 -RUN ./build-llvm.sh $TOOLCHAIN_PREFIX && \
@@ -33,20 +34,15 @@
      ./build-lldb-mi.sh $TOOLCHAIN_PREFIX && \
      ./strip-llvm.sh $TOOLCHAIN_PREFIX && \
      ./install-wrappers.sh $TOOLCHAIN_PREFIX && \
-     ./build-mingw-w64.sh $TOOLCHAIN_PREFIX --with-default-msvcrt=$DEFAULT_CRT $CFGUARD_ARGS && \
-     ./build-mingw-w64-tools.sh $TOOLCHAIN_PREFIX && \
-     ./build-compiler-rt.sh $TOOLCHAIN_PREFIX $CFGUARD_ARGS && \
-@@
--    ./build-openmp.sh $TOOLCHAIN_PREFIX $CFGUARD_ARGS && \
--    rm -rf /build/*
-+    ./build-openmp.sh $TOOLCHAIN_PREFIX $CFGUARD_ARGS && \
-+    rm -rf /build/*
-+
+@@ -38,4 +44,10 @@
+     ./build-openmp.sh $TOOLCHAIN_PREFIX $CFGUARD_ARGS && \
+     rm -rf /build/*
+ 
+-ENV PATH=$TOOLCHAIN_PREFIX/bin:$PATH
 +RUN ./build-host-ollvm.sh $LINUX_LLVM_PREFIX
 +
 +RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal && \
 +    $CARGO_HOME/bin/rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu && \
 +    ln -sf $CARGO_HOME/bin/* /usr/local/bin/
- 
--ENV PATH=$TOOLCHAIN_PREFIX/bin:$PATH
++
 +ENV PATH=$LINUX_LLVM_PREFIX/bin:$TOOLCHAIN_PREFIX/bin:$CARGO_HOME/bin:$PATH
