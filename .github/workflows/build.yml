@@ -50,5 +50,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=ollvm-build
+          cache-to: type=gha,scope=ollvm-build,mode=max
         env:
           SOURCE_DATE_EPOCH: 0
