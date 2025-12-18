@@ -29,10 +29,10 @@ index 550db90..f7d2d32 100644
  # Build everything that uses the llvm monorepo. We need to build the mingw runtime before the compiler-rt/libunwind/libcxxabi/libcxx runtimes.
 -COPY build-llvm.sh build-lldb-mi.sh strip-llvm.sh install-wrappers.sh build-mingw-w64.sh build-mingw-w64-tools.sh build-compiler-rt.sh build-libcxx.sh build-mingw-w64-libraries.sh build-openmp.sh ./
 +COPY obfuscator.patch build-host-ollvm.sh build-llvm.sh build-lldb-mi.sh strip-llvm.sh install-wrappers.sh build-mingw-w64.sh build-mingw-w64-tools.sh build-compiler-rt.sh build-libcxx.sh build-mingw-w64-libraries.sh build-openmp.sh ./
- COPY wrappers/*.sh wrappers/*.c wrappers/*.h ./wrappers/
+COPY wrappers/*.sh wrappers/*.c wrappers/*.h ./wrappers/
 -RUN ./build-llvm.sh $TOOLCHAIN_PREFIX && \
-+RUN chmod +x build-host-ollvm.sh && \
-+    ./build-llvm.sh $TOOLCHAIN_PREFIX && \
++RUN install -m 755 build-host-ollvm.sh /usr/local/bin/build-host-ollvm.sh && \
+     ./build-llvm.sh $TOOLCHAIN_PREFIX && \
      ./build-lldb-mi.sh $TOOLCHAIN_PREFIX && \
      ./strip-llvm.sh $TOOLCHAIN_PREFIX && \
      ./install-wrappers.sh $TOOLCHAIN_PREFIX && \
@@ -41,7 +41,7 @@ index 550db90..f7d2d32 100644
      rm -rf /build/*
  
 -ENV PATH=$TOOLCHAIN_PREFIX/bin:$PATH
-+RUN ./build-host-ollvm.sh $LINUX_LLVM_PREFIX
++RUN /usr/local/bin/build-host-ollvm.sh $LINUX_LLVM_PREFIX
 +
 +RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal && \
 +    $CARGO_HOME/bin/rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu && \
