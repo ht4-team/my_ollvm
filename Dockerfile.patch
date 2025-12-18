@@ -1,5 +1,5 @@
---- llvm-mingw-base/Dockerfile
-+++ llvm-mingw-new/Dockerfile
+--- a/Dockerfile
++++ b/Dockerfile
 @@ -4,7 +4,9 @@
      DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends \
      git wget bzip2 file unzip libtool pkg-config cmake build-essential \
