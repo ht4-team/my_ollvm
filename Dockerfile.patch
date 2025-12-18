@@ -1,6 +1,8 @@
+diff --git a/Dockerfile b/Dockerfile
+index 550db90..f7d2d32 100644
 --- a/Dockerfile
 +++ b/Dockerfile
-@@ -4,7 +4,9 @@
+@@ -4,7 +4,9 @@ RUN apt-get update -qq && \
      DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends \
      git wget bzip2 file unzip libtool pkg-config cmake build-essential \
      automake yasm gettext autopoint vim-tiny python3 python3-distutils \
@@ -11,7 +13,7 @@
      apt-get clean -y && \
      rm -rf /var/lib/apt/lists/*
  
-@@ -15,6 +17,9 @@
+@@ -15,6 +17,9 @@ RUN git config --global user.name "LLVM MinGW" && \
  WORKDIR /build
  
  ENV TOOLCHAIN_PREFIX=/opt/llvm-mingw
@@ -21,7 +23,7 @@
  
  ARG TOOLCHAIN_ARCHS="i686 x86_64 armv7 aarch64"
  
-@@ -23,9 +28,10 @@
+@@ -23,9 +28,10 @@ ARG DEFAULT_CRT=ucrt
  ARG CFGUARD_ARGS=--enable-cfguard
  
  # Build everything that uses the llvm monorepo. We need to build the mingw runtime before the compiler-rt/libunwind/libcxxabi/libcxx runtimes.
@@ -29,17 +31,17 @@
 +COPY obfuscator.patch build-host-ollvm.sh build-llvm.sh build-lldb-mi.sh strip-llvm.sh install-wrappers.sh build-mingw-w64.sh build-mingw-w64-tools.sh build-compiler-rt.sh build-libcxx.sh build-mingw-w64-libraries.sh build-openmp.sh ./
  COPY wrappers/*.sh wrappers/*.c wrappers/*.h ./wrappers/
 -RUN ./build-llvm.sh $TOOLCHAIN_PREFIX && \
-+RUN install -m 755 build-host-ollvm.sh /usr/local/bin/build-host-ollvm.sh && \
-     ./build-llvm.sh $TOOLCHAIN_PREFIX && \
++RUN chmod +x build-host-ollvm.sh && \
++    ./build-llvm.sh $TOOLCHAIN_PREFIX && \
      ./build-lldb-mi.sh $TOOLCHAIN_PREFIX && \
      ./strip-llvm.sh $TOOLCHAIN_PREFIX && \
      ./install-wrappers.sh $TOOLCHAIN_PREFIX && \
-@@ -38,4 +44,10 @@
+@@ -38,4 +44,10 @@ RUN ./build-llvm.sh $TOOLCHAIN_PREFIX && \
      ./build-openmp.sh $TOOLCHAIN_PREFIX $CFGUARD_ARGS && \
      rm -rf /build/*
  
 -ENV PATH=$TOOLCHAIN_PREFIX/bin:$PATH
-+RUN /usr/local/bin/build-host-ollvm.sh $LINUX_LLVM_PREFIX
++RUN ./build-host-ollvm.sh $LINUX_LLVM_PREFIX
 +
 +RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal && \
 +    $CARGO_HOME/bin/rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu && \
