@@ -1,7 +1,7 @@
-diff --git a/llvm-mingw-base/Dockerfile b/llvm-mingw-new/Dockerfile
+diff --git a/Dockerfile b/Dockerfile
 index 550db90..25ec571 100644
---- a/llvm-mingw-base/Dockerfile
-+++ b/llvm-mingw-new/Dockerfile
+--- a/Dockerfile
++++ b/Dockerfile
 @@ -4,7 +4,9 @@ RUN apt-get update -qq && \
      DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends \
      git wget bzip2 file unzip libtool pkg-config cmake build-essential \
