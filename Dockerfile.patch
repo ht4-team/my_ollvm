@@ -32,6 +32,7 @@ index 550db90..25ec571 100644
  COPY wrappers/*.sh wrappers/*.c wrappers/*.h ./wrappers/
 -RUN ./build-llvm.sh $TOOLCHAIN_PREFIX && \
 +RUN install -m 755 build-host-ollvm.sh /usr/local/bin/build-host-ollvm.sh && \
++    install -m 644 obfuscator.patch /usr/local/share/obfuscator.patch && \
 +    ./build-llvm.sh $TOOLCHAIN_PREFIX && \
      ./build-lldb-mi.sh $TOOLCHAIN_PREFIX && \
      ./strip-llvm.sh $TOOLCHAIN_PREFIX && \
@@ -41,7 +42,7 @@ index 550db90..25ec571 100644
      rm -rf /build/*
  
 -ENV PATH=$TOOLCHAIN_PREFIX/bin:$PATH
-+RUN /usr/local/bin/build-host-ollvm.sh $LINUX_LLVM_PREFIX
++RUN PATCH_FILE=/usr/local/share/obfuscator.patch /usr/local/bin/build-host-ollvm.sh $LINUX_LLVM_PREFIX
 +
 +RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal && \
 +    $CARGO_HOME/bin/rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu && \
