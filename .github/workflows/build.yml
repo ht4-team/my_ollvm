@@ -12,15 +12,30 @@ on:
 
 env:
   REGISTRY_IMAGE: zhangdafei1995/my_ollvm
+  TEST_TRIGGER_KEYWORDS: dotest
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-    env:
-      PUSH_IMAGE: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Determine publish target
+        id: publish
+        run: |
+          set -euo pipefail
+          PUSH_IMAGE=false
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
+            PUSH_IMAGE=true
+          else
+            msg="$(git log -1 --pretty=%B)"
+            regex="$(printf '%s' "${TEST_TRIGGER_KEYWORDS:-}" | tr ' ' '|' )"
+            if [[ -n "$regex" ]] && printf '%s\n' "$msg" | grep -Ei "$regex" >/dev/null; then
+              PUSH_IMAGE=true
+            fi
+          fi
+          echo "push_image=$PUSH_IMAGE" >> "$GITHUB_OUTPUT"
 
       - name: Prepare source and patch
         run: bash patch.sh
@@ -40,7 +55,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Login to Docker Hub
-        if: ${{ env.PUSH_IMAGE == 'true' }}
+        if: ${{ steps.publish.outputs.push_image == 'true' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -50,7 +65,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: llvm-mingw
-          push: ${{ env.PUSH_IMAGE == 'true' }}
+          push: ${{ steps.publish.outputs.push_image == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=ollvm-build
