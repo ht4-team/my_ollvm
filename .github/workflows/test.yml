@@ -100,7 +100,7 @@ jobs:
           fi;
           \"\$CARGO_BIN\" clean;
           env CC_x86_64_unknown_linux_musl=clang CFLAGS_x86_64_unknown_linux_musl='-mllvm -fla -mllvm -bcf' \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
-          env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=/opt/llvm-mingw/bin/x86_64-w64-mingw32-clang RUSTFLAGS='-Clink-self-contained=yes -Clink-arg=-fuse-ld=lld -Clink-arg=-Wl,-O2' \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
+          env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=/opt/llvm-mingw/bin/x86_64-w64-mingw32-clang RUSTFLAGS='-Clink-self-contained=yes -Clink-arg=-fuse-ld=lld -Clink-arg=-Wl,-O2 -Clink-arg=-rtlib=compiler-rt -Clink-arg=-unwindlib=libunwind' \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
           cp target/x86_64-unknown-linux-musl/release/ollvm-smoke /artifacts/rust-linux-musl;
           cp target/x86_64-pc-windows-gnu/release/ollvm-smoke.exe /artifacts/rust-windows.exe"
 
