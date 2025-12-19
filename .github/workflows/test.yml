@@ -38,6 +38,13 @@ jobs:
         if: ${{ steps.smoke.outputs.run_smoke != 'true' }}
         run: echo "Skipping smoke tests for workflow_run ${GITHUB_RUN_ID}; not a release tag or keyword-triggered commit."
 
+      - name: Prepare artifact directory
+        if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
+        run: |
+          set -euo pipefail
+          rm -rf artifacts
+          mkdir -p artifacts
+
       - name: Set up Docker Buildx
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         uses: docker/setup-buildx-action@v3
@@ -53,30 +60,52 @@ jobs:
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         run: docker pull ${{ env.REGISTRY_IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
 
-      - name: Linux glibc and musl smoke tests
+      - name: Linux glibc and musl build
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         run: >-
-          docker run --rm -v ${{ github.workspace }}/tests:/tests
+          docker run --rm
+          -v ${{ github.workspace }}/tests:/tests
+          -v ${{ github.workspace }}/artifacts:/artifacts
           ${{ env.REGISTRY_IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
           bash -lc "set -euo pipefail;
-          clang /tests/linux_glibc.c -O2 -o /tmp/linux_glibc && /tmp/linux_glibc;
-          clang --target=x86_64-linux-musl --sysroot /usr/x86_64-linux-musl -static /tests/linux_glibc.c -O2 -o /tmp/linux_musl && /tmp/linux_musl"
+          mkdir -p /artifacts;
+          clang -mllvm -fla -mllvm -bcf /tests/linux_glibc.c -O2 -o /artifacts/linux_glibc && /artifacts/linux_glibc;
+          clang --target=x86_64-linux-musl --sysroot /usr/x86_64-linux-musl -static -mllvm -fla -mllvm -bcf /tests/linux_glibc.c -O2 -o /artifacts/linux_musl;
+          /artifacts/linux_musl"
 
-      - name: Windows mingw smoke test
+      - name: Windows mingw build
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         run: >-
-          docker run --rm -v ${{ github.workspace }}/tests:/tests
+          docker run --rm
+          -v ${{ github.workspace }}/tests:/tests
+          -v ${{ github.workspace }}/artifacts:/artifacts
           ${{ env.REGISTRY_IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
           bash -lc "set -euo pipefail;
-          x86_64-w64-mingw32-clang /tests/windows_hello.c -O2 -o /tmp/hello.exe -luser32;
-          llvm-readobj -file-headers /tmp/hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
+          mkdir -p /artifacts;
+          x86_64-w64-mingw32-clang -mllvm -sub -mllvm -bcf /tests/windows_hello.c -O2 -o /artifacts/windows_hello.exe -luser32;
+          llvm-readobj -file-headers /artifacts/windows_hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
 
-      - name: Rust toolchain smoke tests
+      - name: Rust toolchain builds
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         run: >-
-          docker run --rm -v ${{ github.workspace }}/tests:/tests
+          docker run --rm
+          -v ${{ github.workspace }}/tests:/tests
+          -v ${{ github.workspace }}/artifacts:/artifacts
           ${{ env.REGISTRY_IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
           bash -lc "set -euo pipefail;
           cd /tests/rust;
+          cargo clean;
+          CC_x86_64_unknown_linux_musl=clang CFLAGS_x86_64_unknown_linux_musl='-mllvm -fla -mllvm -bcf' \
           cargo build --target x86_64-unknown-linux-musl --release;
-          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=/opt/llvm-mingw/bin/x86_64-w64-mingw32-clang cargo build --target x86_64-pc-windows-gnu --release"
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=/opt/llvm-mingw/bin/x86_64-w64-mingw32-clang \
+          RUSTFLAGS='-Clink-arg=-fuse-ld=lld -Clink-arg=-Wl,-O2' \
+          cargo build --target x86_64-pc-windows-gnu --release;
+          cp target/x86_64-unknown-linux-musl/release/ollvm-smoke /artifacts/rust-linux-musl;
+          cp target/x86_64-pc-windows-gnu/release/ollvm-smoke.exe /artifacts/rust-windows.exe"
+
+      - name: Upload artifacts
+        if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ollvm-binaries-${{ github.event.workflow_run.head_sha }}
+          path: artifacts
