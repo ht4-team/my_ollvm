@@ -11,7 +11,13 @@ env:
 
 jobs:
   smoke:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_branch, 'v') }}
+    if: >-
+      ${{
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        startsWith(github.event.workflow_run.head_branch, 'v')
+      }}
     runs-on: ubuntu-latest
     env:
       IMAGE_REF: ${{ env.REGISTRY_IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
