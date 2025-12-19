@@ -83,7 +83,7 @@ jobs:
           bash -lc "set -euo pipefail;
           mkdir -p /artifacts;
           x86_64-w64-mingw32-clang -mllvm -sub -mllvm -bcf /tests/windows_hello.c -O2 -o /artifacts/windows_hello.exe -luser32;
-          llvm-readobj -file-headers /artifacts/windows_hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
+          llvm-readobj --file-headers /artifacts/windows_hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
 
       - name: Rust toolchain builds
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
