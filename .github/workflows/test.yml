@@ -89,6 +89,9 @@ jobs:
             rm -rf /var/lib/apt/lists/*
           fi;
           LIBGCC_DIR=\"\$(dirname \"\$(x86_64-w64-mingw32-gcc -print-libgcc-file-name)\")\";
+          if [ ! -f \"\$LIBGCC_DIR/libgcc_eh.a\" ] && [ -f \"\$LIBGCC_DIR/libgcc.a\" ]; then
+            ln -sf \"\$LIBGCC_DIR/libgcc.a\" \"\$LIBGCC_DIR/libgcc_eh.a\";
+          fi;
           export LIBRARY_PATH=\"\$LIBGCC_DIR:/opt/llvm-mingw/x86_64-w64-mingw32/lib:\${LIBRARY_PATH:-}\";
           WIN_RUSTFLAGS=\"-Clink-self-contained=yes -Clink-arg=-fuse-ld=lld -Clink-arg=-Wl,-O2 -Clink-arg=-L\$LIBGCC_DIR\";
           env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=/opt/llvm-mingw/bin/x86_64-w64-mingw32-clang CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
