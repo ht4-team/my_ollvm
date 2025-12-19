@@ -80,14 +80,33 @@ jobs:
           if [ ! -x \"\$CARGO_BIN\" ]; then
             CARGO_BIN=\"\$(command -v cargo)\";
           fi;
-          MINGW_LIB_GCC=\"\$(x86_64-w64-mingw32-gcc -print-libgcc-file-name 2>/dev/null || true)\";
+          shopt -s nullglob;
+          MINGW_LIB_GCC=\"\$(x86_64-w64-mingw32-gcc -print-libgcc-file-name 2>/dev/null || x86_64-w64-mingw32-clang -print-libgcc-file-name 2>/dev/null || true)\";
+          LIB_SEARCH_DIRS=();
           if [ -n \"\$MINGW_LIB_GCC\" ]; then
-            LIBGCC_DIR=\"\$(dirname \"\$MINGW_LIB_GCC\")\";
-            export LIBRARY_PATH=\"\$LIBGCC_DIR:/opt/llvm-mingw/lib:\${LIBRARY_PATH:-}\";
+            LIB_SEARCH_DIRS+=( \"\$(dirname \"\$MINGW_LIB_GCC\")\" );
           fi;
+          for candidate in /opt/llvm-mingw/lib/gcc/x86_64-w64-mingw32/*; do
+            [[ -d \"\$candidate\" ]] || continue
+            LIB_SEARCH_DIRS+=( \"\$candidate\" );
+          done;
+          [[ -d /opt/llvm-mingw/x86_64-w64-mingw32/lib ]] && LIB_SEARCH_DIRS+=(\"/opt/llvm-mingw/x86_64-w64-mingw32/lib\");
+          [[ -d /opt/llvm-mingw/lib ]] && LIB_SEARCH_DIRS+=(\"/opt/llvm-mingw/lib\");
           RUSTFLAGS_MINGW='-Clink-self-contained=yes -Clink-arg=-fuse-ld=lld -Clink-arg=-Wl,-O2 -Clink-arg=-rtlib=compiler-rt -Clink-arg=-unwindlib=libunwind';
-          if [ -n \"${LIBGCC_DIR:-}\" ]; then
-            RUSTFLAGS_MINGW=\"\$RUSTFLAGS_MINGW -Clink-arg=-L\${LIBGCC_DIR}\";
+          if [ \"\${#LIB_SEARCH_DIRS[@]}\" -gt 0 ]; then
+            LIB_PATH_VALUE=\"\";
+            for candidate in \"\${LIB_SEARCH_DIRS[@]}\"; do
+              [[ -d \"\$candidate\" ]] || continue
+              RUSTFLAGS_MINGW=\"\$RUSTFLAGS_MINGW -Clink-arg=-L\$candidate\";
+              if [ -z \"\$LIB_PATH_VALUE\" ]; then
+                LIB_PATH_VALUE=\"\$candidate\";
+              else
+                LIB_PATH_VALUE=\"\$LIB_PATH_VALUE:\$candidate\";
+              fi;
+            done;
+            if [ -n \"\$LIB_PATH_VALUE\" ]; then
+              export LIBRARY_PATH=\"\$LIB_PATH_VALUE:\${LIBRARY_PATH:-}\";
+            fi;
           fi;
           \"\$CARGO_BIN\" clean;
           env CC_x86_64_unknown_linux_musl=clang CFLAGS_x86_64_unknown_linux_musl='-mllvm -fla -mllvm -bcf' \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
