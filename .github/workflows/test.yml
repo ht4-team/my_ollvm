@@ -81,6 +81,16 @@ jobs:
             CARGO_BIN=\"\$(command -v cargo)\";
           fi;
           shopt -s nullglob;
+          STUB_DIR=\"/tmp/mingw-compat-libs\";
+          mkdir -p \"\$STUB_DIR\";
+          CLANG_BUILTINS=\"\$(find /opt/llvm-mingw -name 'libclang_rt.builtins-x86_64.a' 2>/dev/null | head -n 1 || true)\";
+          if [ -n \"\$CLANG_BUILTINS\" ]; then
+            printf 'GROUP (%s)\\n' \"\$CLANG_BUILTINS\" > \"\$STUB_DIR/libgcc.a\";
+          fi;
+          UNWIND_LIB=\"\$(find /opt/llvm-mingw -name 'libunwind.a' 2>/dev/null | head -n 1 || true)\";
+          if [ -n \"\$UNWIND_LIB\" ]; then
+            printf 'GROUP (%s)\\n' \"\$UNWIND_LIB\" > \"\$STUB_DIR/libgcc_eh.a\";
+          fi;
           MINGW_LIB_GCC=\"\$(x86_64-w64-mingw32-gcc -print-libgcc-file-name 2>/dev/null || x86_64-w64-mingw32-clang -print-libgcc-file-name 2>/dev/null || true)\";
           LIB_SEARCH_DIRS=();
           if [ -n \"\$MINGW_LIB_GCC\" ]; then
@@ -92,6 +102,7 @@ jobs:
           done;
           [[ -d /opt/llvm-mingw/x86_64-w64-mingw32/lib ]] && LIB_SEARCH_DIRS+=(\"/opt/llvm-mingw/x86_64-w64-mingw32/lib\");
           [[ -d /opt/llvm-mingw/lib ]] && LIB_SEARCH_DIRS+=(\"/opt/llvm-mingw/lib\");
+          LIB_SEARCH_DIRS+=(\"\$STUB_DIR\");
           RUSTFLAGS_MINGW='-Clink-self-contained=yes -Clink-arg=-fuse-ld=lld -Clink-arg=-Wl,-O2 -Clink-arg=-rtlib=compiler-rt -Clink-arg=-unwindlib=libunwind';
           if [ \"\${#LIB_SEARCH_DIRS[@]}\" -gt 0 ]; then
             LIB_PATH_VALUE=\"\";
