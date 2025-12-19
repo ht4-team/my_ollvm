@@ -1,10 +1,12 @@
 name: test
 
 on:
-  workflow_run:
-    workflows: ["build"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 env:
   REGISTRY_IMAGE: zhangdafei1995/my_ollvm
@@ -13,7 +15,6 @@ env:
 
 jobs:
   smoke:
-    if: ${{ github.event_name == 'workflow_run' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,10 +25,15 @@ jobs:
         run: |
           set -euo pipefail
           RUN_SMOKE=false
-          if [[ "${{ github.event.workflow_run.event }}" == "push" && "${{ github.event.workflow_run.head_branch }}" == v* ]]; then
+          EVENT="${GITHUB_EVENT_NAME:-}"
+          REF_TYPE="${GITHUB_REF_TYPE:-}"
+          REF_NAME="${GITHUB_REF_NAME:-}"
+          if [[ "$EVENT" == "push" && "$REF_TYPE" == "tag" && "$REF_NAME" == v* ]]; then
+            RUN_SMOKE=true
+          elif [[ "$EVENT" == "workflow_dispatch" ]]; then
             RUN_SMOKE=true
           else
-            msg="$(git show -s --format=%B "${{ github.event.workflow_run.head_sha }}")"
+            msg="$(git show -s --format=%B "${GITHUB_SHA}")"
             regex="$(printf '%s' "${TEST_TRIGGER_KEYWORDS:-}" | tr ' ' '|' )"
             if [[ -n "$regex" ]] && printf '%s\n' "$msg" | grep -Ei "$regex" >/dev/null; then
               RUN_SMOKE=true
@@ -37,7 +43,7 @@ jobs:
 
       - name: Skip non-release runs
         if: ${{ steps.smoke.outputs.run_smoke != 'true' }}
-        run: echo "Skipping smoke tests for workflow_run ${GITHUB_RUN_ID}; not a release tag or keyword-triggered commit."
+        run: echo "Skipping smoke tests for ${GITHUB_REF}; not a release tag or keyword-triggered commit."
 
       - name: Prepare artifact directory
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
@@ -113,5 +119,5 @@ jobs:
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ollvm-binaries-${{ github.event.workflow_run.head_sha }}
+          name: ollvm-binaries-${{ github.sha }}
           path: artifacts
