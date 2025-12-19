@@ -28,6 +28,8 @@ x86_64-w64-mingw32-clang -mllvm -bcf tests/windows_hello.c -o hello.exe -luser32
 cargo build --target x86_64-unknown-linux-musl
 ```
 
+More detailed Chinese usage notes (covering musl/glibc, MinGW 和 Rust 项目) can be found in [`docs/usage_guide.zh.md`](docs/usage_guide.zh.md).
+
 ## credits
 [Obfuscation LLVM 18](https://github.com/sr-tream/obfuscator)
 
