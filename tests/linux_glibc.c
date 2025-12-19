@@ -64,5 +64,15 @@ int main(void) {
 
     printf("glibc scramble signature: %016llx\n", (unsigned long long)sig);
     printf("obfuscated buffer: %s\n", rendered);
-    return (int)(sig & 0xFF);
+
+    const uint64_t expected_sig = 0x9f0fc0c7602698d6ULL;
+    if (sig != expected_sig) {
+        fprintf(stderr,
+                "Signature mismatch: expected %016llx but got %016llx\n",
+                (unsigned long long)expected_sig,
+                (unsigned long long)sig);
+        return 1;
+    }
+
+    return 0;
 }
