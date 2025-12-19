@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Warm cache-friendly helper script; keep in sync with workflow expectations.
+# Warm cache-friendly helper script; keep in sync with workflow expectations (dotest trigger verification helper).
 set -x
 
 git clone --depth 1 --branch 20240619 https://github.com/mstorsjo/llvm-mingw && \
