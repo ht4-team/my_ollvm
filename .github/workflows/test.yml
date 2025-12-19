@@ -70,7 +70,7 @@ jobs:
           bash -lc "set -euo pipefail;
           mkdir -p /artifacts;
           clang -mllvm -fla -mllvm -bcf /tests/linux_glibc.c -O2 -o /artifacts/linux_glibc && /artifacts/linux_glibc;
-          clang --target=x86_64-linux-musl --sysroot /usr/x86_64-linux-musl -static -mllvm -fla -mllvm -bcf /tests/linux_glibc.c -O2 -o /artifacts/linux_musl;
+          clang --target=x86_64-linux-musl --sysroot /usr/x86_64-linux-musl -isystem /usr/x86_64-linux-musl/include -static -mllvm -fla -mllvm -bcf /tests/linux_glibc.c -O2 -o /artifacts/linux_musl;
           /artifacts/linux_musl"
 
       - name: Windows mingw build
