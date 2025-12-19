@@ -16,6 +16,8 @@ env:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    env:
+      PUSH_IMAGE: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +40,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Login to Docker Hub
+        if: ${{ env.PUSH_IMAGE == 'true' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -47,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: llvm-mingw
-          push: true
+          push: ${{ env.PUSH_IMAGE == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=ollvm-build
