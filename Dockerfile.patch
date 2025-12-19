@@ -9,7 +9,8 @@ index 550db90..5a055d3 100644
 -    ninja-build ca-certificates curl less zip && \
 +    ninja-build ca-certificates curl less zip musl-dev musl-tools \
 +    zlib1g-dev libxml2-dev libedit-dev libncurses-dev libffi-dev libssl-dev \
-+    rsync xz-utils patchelf && \
++    rsync xz-utils patchelf gcc-mingw-w64 g++-mingw-w64 binutils-mingw-w64 \
++    mingw-w64 && \
      apt-get clean -y && \
      rm -rf /var/lib/apt/lists/*
  
