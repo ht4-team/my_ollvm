@@ -11,6 +11,8 @@ Unified OLLVM toolchain image that bundles:
 
 - `build.yml` patches the upstream [`llvm-mingw`](https://github.com/mstorsjo/llvm-mingw) sources, builds the Docker image remotely。只有 `v*` 标签或 commit message 含 `dotest`（可在 `TEST_TRIGGER_KEYWORDS` 中自定义）的提交才会推送镜像；其它 push 只用于预热缓存。
 - `test.yml` runs automatically after a successful build, pulls the freshly published image,构建使用 OLLVM 参数的 Linux/Windows/Rust 可执行文件并上传到 workflow artifacts，确保镜像不仅可编译还产出可复用的样例成果。
+
+> dotest commit 触发说明：提交信息包含 `dotest`（可在 workflow 中扩展关键字），会强制执行镜像推送与 artifacts 构建。
 - Monitor the builds with `gh run watch --workflow build` and `gh run watch --workflow test` (use `pm gh ...` if the proxy helper is needed). Do **not** run any heavy docker build locally; everything is delegated to Actions.
 - Buildx uses a shared `gha` cache (`scope=ollvm-build`) so routine pushes只重新执行差异层；绝大多数文档/脚本改动能在几分钟内完成一次轻量构建。`dotest` commit（用于触发测试）也受益于同一缓存层。
 
