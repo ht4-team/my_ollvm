@@ -13,6 +13,8 @@ jobs:
   smoke:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      IMAGE_REF: ${{ env.REGISTRY_IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,12 +29,12 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Pull image
-        run: docker pull ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+        run: docker pull ${{ env.IMAGE_REF }}
 
       - name: Linux glibc and musl smoke tests
         run: >-
           docker run --rm -v ${{ github.workspace }}/tests:/tests
-          ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+          ${{ env.IMAGE_REF }}
           bash -lc "set -euo pipefail;
           clang /tests/linux_glibc.c -O2 -o /tmp/linux_glibc && /tmp/linux_glibc;
           clang --target=x86_64-linux-musl --sysroot /usr/x86_64-linux-musl -static /tests/linux_glibc.c -O2 -o /tmp/linux_musl && /tmp/linux_musl"
@@ -40,7 +42,7 @@ jobs:
       - name: Windows mingw smoke test
         run: >-
           docker run --rm -v ${{ github.workspace }}/tests:/tests
-          ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+          ${{ env.IMAGE_REF }}
           bash -lc "set -euo pipefail;
           x86_64-w64-mingw32-clang /tests/windows_hello.c -O2 -o /tmp/hello.exe -luser32;
           llvm-readobj -file-headers /tmp/hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
@@ -48,7 +50,7 @@ jobs:
       - name: Rust toolchain smoke tests
         run: >-
           docker run --rm -v ${{ github.workspace }}/tests:/tests
-          ${{ env.REGISTRY_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+          ${{ env.IMAGE_REF }}
           bash -lc "set -euo pipefail;
           cd /tests/rust;
           cargo build --target x86_64-unknown-linux-musl --release;
