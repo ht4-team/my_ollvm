@@ -78,8 +78,8 @@ jobs:
           \"\$CARGO_BIN\" clean;
           GNU_PLAIN=/tmp/rust_plain_gnu;
           GNU_OBF=/tmp/rust_obf_gnu;
-          CARGO_TARGET_DIR=\"\$GNU_PLAIN\" \"\$CARGO_BIN\" build --release;
-          CARGO_TARGET_DIR=\"\$GNU_OBF\" CC=clang CFLAGS=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --release;
+          env OLLVM_MARK=plain OLLVM_EXTRA_FLAGS=\"\" CARGO_TARGET_DIR=\"\$GNU_PLAIN\" \"\$CARGO_BIN\" build --release;
+          env OLLVM_MARK=obf OLLVM_EXTRA_FLAGS=\"\$OBF_FLAGS\" CARGO_TARGET_DIR=\"\$GNU_OBF\" CC=clang CFLAGS=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --release;
           if cmp -s \"\$GNU_PLAIN/release/ollvm-smoke\" \"\$GNU_OBF/release/ollvm-smoke\"; then
             echo 'Rust GNU binary unchanged under obfuscation flags' >&2
             exit 1
@@ -87,8 +87,8 @@ jobs:
           cp \"\$GNU_OBF/release/ollvm-smoke\" /artifacts/rust-linux-gnu;
           MUSL_PLAIN=/tmp/rust_plain_musl;
           MUSL_OBF=/tmp/rust_obf_musl;
-          CARGO_TARGET_DIR=\"\$MUSL_PLAIN\" \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
-          CARGO_TARGET_DIR=\"\$MUSL_OBF\" CC_x86_64_unknown_linux_musl=clang CFLAGS_x86_64_unknown_linux_musl=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
+          env OLLVM_MARK=plain OLLVM_EXTRA_FLAGS=\"\" CARGO_TARGET_DIR=\"\$MUSL_PLAIN\" \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
+          env OLLVM_MARK=obf OLLVM_EXTRA_FLAGS=\"\$OBF_FLAGS\" CARGO_TARGET_DIR=\"\$MUSL_OBF\" CC_x86_64_unknown_linux_musl=clang CFLAGS_x86_64_unknown_linux_musl=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
           if cmp -s \"\$MUSL_PLAIN/x86_64-unknown-linux-musl/release/ollvm-smoke\" \"\$MUSL_OBF/x86_64-unknown-linux-musl/release/ollvm-smoke\"; then
             echo 'Rust musl binary unchanged under obfuscation flags' >&2
             exit 1
@@ -105,8 +105,8 @@ jobs:
           WIN_RUSTFLAGS=\"-Clinker-flavor=gcc -Clink-arg=-s\";
           WIN_PLAIN=/tmp/rust_plain_win;
           WIN_OBF=/tmp/rust_obf_win;
-          CARGO_TARGET_DIR=\"\$WIN_PLAIN\" env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=\"\$WIN_LINKER\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
-          CARGO_TARGET_DIR=\"\$WIN_OBF\" env CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=\"\$WIN_LINKER\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" CC_x86_64_pc_windows_gnu=clang CFLAGS_x86_64_pc_windows_gnu=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
+          env OLLVM_MARK=plain OLLVM_EXTRA_FLAGS=\"\" CARGO_TARGET_DIR=\"\$WIN_PLAIN\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=\"\$WIN_LINKER\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
+          env OLLVM_MARK=obf OLLVM_EXTRA_FLAGS=\"\$OBF_FLAGS\" CARGO_TARGET_DIR=\"\$WIN_OBF\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=\"\$WIN_LINKER\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" CC_x86_64_pc_windows_gnu=clang CFLAGS_x86_64_pc_windows_gnu=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
           if cmp -s \"\$WIN_PLAIN/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\" \"\$WIN_OBF/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\"; then
             echo 'Rust Windows binary unchanged under obfuscation flags' >&2
             exit 1

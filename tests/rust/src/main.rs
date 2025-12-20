@@ -2,6 +2,11 @@
 
 use std::fmt::Write;
 
+extern "C" {
+    fn ffi_mix_state(buf: *const u64, len: usize, seed: u64) -> u64;
+    fn ffi_mark_hash() -> u64;
+}
+
 #[inline(never)]
 fn avalanche(mut v: u64) -> u64 {
     v ^= v >> 33;
@@ -35,7 +40,9 @@ fn derive_signature(payload: &[u8]) -> u64 {
         lanes[(i + 2) & 3] ^= vm;
         mix_block(&mut lanes, i as u64 ^ 0xA5A5_A5A5_A5A5_A5A5);
     }
-    avalanche(lanes.iter().fold(0, |acc, &v| avalanche(acc ^ v)))
+    let reduced = lanes.iter().fold(0, |acc, &v| avalanche(acc ^ v));
+    let fused = fuse_with_native_rounds(&lanes, reduced);
+    avalanche(reduced ^ fused.rotate_left(7))
 }
 
 fn render_digest(state: &[u64; 4]) -> String {
@@ -80,6 +87,13 @@ fn reversible_twirl(block: &mut [u64; 4], salt: u64) {
     }
     for (idx, lane) in block.iter_mut().enumerate().rev() {
         *lane = (*lane ^ masks[idx]).rotate_right(rots[idx] as u32);
+    }
+}
+
+fn fuse_with_native_rounds(lanes: &[u64; 4], seed: u64) -> u64 {
+    unsafe {
+        let twist = ffi_mark_hash();
+        ffi_mix_state(lanes.as_ptr(), lanes.len(), seed ^ twist)
     }
 }
 
