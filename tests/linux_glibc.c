@@ -12,11 +12,30 @@ static inline uint64_t rotl(uint64_t v, unsigned c) {
     return (v << (c & 63)) | (v >> ((64 - c) & 63));
 }
 
+static inline uint64_t rotr(uint64_t v, unsigned c) {
+    return (v >> (c & 63)) | (v << ((64 - c) & 63));
+}
+
 static uint64_t mix_round(uint64_t v, uint64_t salt) {
     v ^= salt;
     v = rotl(v * 0x9E3779B185EBCA87ULL, 23);
     v ^= (v >> 29) * 0x94D049BB133111EBULL;
     return v ^ rotl(v, 19);
+}
+
+static void reversible_whirl(uint64_t *buf, size_t len, uint64_t spice) {
+    uint64_t masks[16];
+    unsigned char rots[16];
+    for (size_t i = 0; i < len; ++i) {
+        uint64_t base = mix_round(spice + i, 0xA5A5A5A5A5A5A5A5ULL ^ i);
+        unsigned char rot = (unsigned char)((base ^ spice) & 63);
+        masks[i] = base;
+        rots[i] = rot;
+        buf[i] = rotl(buf[i] ^ masks[i], rot);
+    }
+    for (size_t i = len; i-- > 0;) {
+        buf[i] = rotr(buf[i], rots[i]) ^ masks[i];
+    }
 }
 
 static void scramble(cipher_state *state, uint64_t *buf, size_t len) {
@@ -52,6 +71,7 @@ int main(void) {
         .rounds = 5
     };
 
+    reversible_whirl(data, 8, state.s0 ^ state.s1);
     scramble(&state, data, 8);
     uint64_t sig = checksum(data, 8);
 

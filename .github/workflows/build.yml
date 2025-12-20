@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      rebuild_from_scratch:
+        description: 'Ignore cached layers and rebuild everything from Ubuntu base'
+        required: false
+        default: 'false'
 
 env:
   REGISTRY_IMAGE: zhangdafei1995/my_ollvm
@@ -27,6 +32,27 @@ jobs:
           fi
           echo "push_image=$PUSH_IMAGE" >> "$GITHUB_OUTPUT"
 
+      - name: Select build strategy
+        id: strategy
+        if: ${{ steps.publish.outputs.push_image == 'true' }}
+        env:
+          DISPATCH_REBUILD: ${{ github.event.inputs.rebuild_from_scratch || 'false' }}
+        run: |
+          set -euo pipefail
+          REBUILD=false
+          if [[ "${DISPATCH_REBUILD}" == "true" ]]; then
+            REBUILD=true
+          fi
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v*full* ]]; then
+            REBUILD=true
+          fi
+          USE_CACHE=true
+          if [[ "$REBUILD" == "true" ]]; then
+            USE_CACHE=false
+          fi
+          echo "rebuild=$REBUILD" >> "$GITHUB_OUTPUT"
+          echo "use_cache=$USE_CACHE" >> "$GITHUB_OUTPUT"
+
       - name: Skip non-release builds
         if: ${{ steps.publish.outputs.push_image != 'true' }}
         run: echo "Skipping docker build for ref ${GITHUB_REF_NAME}; not a release tag."
@@ -34,6 +60,11 @@ jobs:
       - name: Prepare source and patch
         if: ${{ steps.publish.outputs.push_image == 'true' }}
         run: bash patch.sh
+
+      - name: Warm registry cache
+        if: ${{ steps.publish.outputs.push_image == 'true' && steps.strategy.outputs.use_cache == 'true' }}
+        continue-on-error: true
+        run: docker pull ${{ env.REGISTRY_IMAGE }}:latest
 
       - name: Set up Docker Buildx
         if: ${{ steps.publish.outputs.push_image == 'true' }}
@@ -65,7 +96,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=ollvm-build
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY_IMAGE }}:latest
+            type=gha,scope=ollvm-build
           cache-to: type=gha,scope=ollvm-build,mode=max
+          build-args: BUILDKIT_INLINE_CACHE=1
+          no-cache: ${{ steps.strategy.outputs.rebuild == 'true' }}
         env:
           SOURCE_DATE_EPOCH: 0

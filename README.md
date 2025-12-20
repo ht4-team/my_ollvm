@@ -9,9 +9,10 @@ Unified OLLVM toolchain image that bundles:
 
 ## Building & publishing (GitHub Actions)
 
-- `build.yml` patches the upstream [`llvm-mingw`](https://github.com/mstorsjo/llvm-mingw) sources, builds the Docker image remotely。只有 `v*` 标签或 commit message 含 `dotest`（可在 `TEST_TRIGGER_KEYWORDS` 中自定义）的提交才会推送镜像；其它 push 只用于预热缓存。
+- `build.yml` patches the upstream [`llvm-mingw`](https://github.com/mstorsjo/llvm-mingw) sources, builds the Docker image remotely。只有 `v*` 标签或 commit message 含 `dotest`（可在 `TEST_TRIGGER_KEYWORDS` 中自定义）的提交才会推送镜像；其它 push 只用于预热缓存。默认会先拉取 `zhangdafei1995/my_ollvm:latest` 作为 layer cache，因此大部分镜像迭代只需几分钟；如果要强制全量构建，可在 `workflow_dispatch` 时把 `rebuild_from_scratch` 设为 `true`，或把标签命名为 `vXXXX-full` 等带 `-full` 的形式。
 - `test.yml` runs automatically after a successful build, pulls the freshly published image,构建使用 OLLVM 参数的 Linux/Windows/Rust 可执行文件并上传到 workflow artifacts，确保镜像不仅可编译还产出可复用的样例成果。
 - 若镜像尚未包含 `gcc-mingw-w64` 系列包，`test.yml` 会在容器内按需安装，待新的带 v 标签镜像构建完毕即可去掉该兜底逻辑。
+- 测试阶段会对同一份源码先编译“原味”二进制，再用大量 OLLVM `-mllvm` 选项构建一个混淆版本，并用 `cmp`/哈希比对确保二进制确实发生变化；若检测到两者完全一致就立即失败，避免无谓的 2 小时浪费。
 
 > dotest commit 触发说明：提交信息包含 `dotest`（可在 workflow 中扩展关键字），会强制执行镜像推送与 artifacts 构建。
 - Monitor the builds with `gh run watch --workflow build` and `gh run watch --workflow test` (use `pm gh ...` if the proxy helper is needed). Do **not** run any heavy docker build locally; everything is delegated to Actions.
