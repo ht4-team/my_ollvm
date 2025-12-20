@@ -95,9 +95,8 @@ jobs:
           fi;
           cp \"\$MUSL_OBF/x86_64-unknown-linux-musl/release/ollvm-smoke\" /artifacts/rust-linux-musl;
           if ! command -v /usr/bin/x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
-            apt-get update -qq
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-mingw-w64
-            rm -rf /var/lib/apt/lists/*
+            echo 'Missing mingw toolchain in image; rebuild base image instead of installing ad-hoc packages.' >&2
+            exit 1
           fi;
           WIN_LINKER=/usr/bin/x86_64-w64-mingw32-gcc;
           LIBGCC_DIR=\"\$(dirname \"\$(\"\$WIN_LINKER\" -print-libgcc-file-name)\")\";
