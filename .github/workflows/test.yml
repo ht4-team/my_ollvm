@@ -80,6 +80,10 @@ jobs:
           GNU_OBF=/tmp/rust_obf_gnu;
           env OLLVM_MARK=plain OLLVM_EXTRA_FLAGS=\"\" CARGO_TARGET_DIR=\"\$GNU_PLAIN\" \"\$CARGO_BIN\" build --release;
           env OLLVM_MARK=obf OLLVM_EXTRA_FLAGS=\"\$OBF_FLAGS\" CARGO_TARGET_DIR=\"\$GNU_OBF\" CC=clang CFLAGS=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --release;
+          GNU_PLAIN_HASH=\"\$(sha256sum \"\$GNU_PLAIN/release/ollvm-smoke\" | awk '{print \$1}')\";
+          GNU_OBF_HASH=\"\$(sha256sum \"\$GNU_OBF/release/ollvm-smoke\" | awk '{print \$1}')\";
+          echo \"Rust GNU plain hash: \$GNU_PLAIN_HASH\";
+          echo \"Rust GNU obf hash:   \$GNU_OBF_HASH\";
           if cmp -s \"\$GNU_PLAIN/release/ollvm-smoke\" \"\$GNU_OBF/release/ollvm-smoke\"; then
             echo 'Rust GNU binary unchanged under obfuscation flags' >&2
             exit 1
@@ -89,6 +93,10 @@ jobs:
           MUSL_OBF=/tmp/rust_obf_musl;
           env OLLVM_MARK=plain OLLVM_EXTRA_FLAGS=\"\" CARGO_TARGET_DIR=\"\$MUSL_PLAIN\" \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
           env OLLVM_MARK=obf OLLVM_EXTRA_FLAGS=\"\$OBF_FLAGS\" CARGO_TARGET_DIR=\"\$MUSL_OBF\" CC_x86_64_unknown_linux_musl=clang CFLAGS_x86_64_unknown_linux_musl=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --target x86_64-unknown-linux-musl --release;
+          MUSL_PLAIN_HASH=\"\$(sha256sum \"\$MUSL_PLAIN/x86_64-unknown-linux-musl/release/ollvm-smoke\" | awk '{print \$1}')\";
+          MUSL_OBF_HASH=\"\$(sha256sum \"\$MUSL_OBF/x86_64-unknown-linux-musl/release/ollvm-smoke\" | awk '{print \$1}')\";
+          echo \"Rust musl plain hash: \$MUSL_PLAIN_HASH\";
+          echo \"Rust musl obf hash:   \$MUSL_OBF_HASH\";
           if cmp -s \"\$MUSL_PLAIN/x86_64-unknown-linux-musl/release/ollvm-smoke\" \"\$MUSL_OBF/x86_64-unknown-linux-musl/release/ollvm-smoke\"; then
             echo 'Rust musl binary unchanged under obfuscation flags' >&2
             exit 1
@@ -106,6 +114,10 @@ jobs:
           WIN_OBF=/tmp/rust_obf_win;
           env OLLVM_MARK=plain OLLVM_EXTRA_FLAGS=\"\" CARGO_TARGET_DIR=\"\$WIN_PLAIN\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=\"\$WIN_LINKER\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
           env OLLVM_MARK=obf OLLVM_EXTRA_FLAGS=\"\$OBF_FLAGS\" CARGO_TARGET_DIR=\"\$WIN_OBF\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=\"\$WIN_LINKER\" CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS=\"\$WIN_RUSTFLAGS\" CC_x86_64_pc_windows_gnu=clang CFLAGS_x86_64_pc_windows_gnu=\"\$OBF_FLAGS\" \"\$CARGO_BIN\" build --target x86_64-pc-windows-gnu --release;
+          WIN_PLAIN_HASH=\"\$(sha256sum \"\$WIN_PLAIN/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\" | awk '{print \$1}')\";
+          WIN_OBF_HASH=\"\$(sha256sum \"\$WIN_OBF/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\" | awk '{print \$1}')\";
+          echo \"Rust win plain hash: \$WIN_PLAIN_HASH\";
+          echo \"Rust win obf hash:   \$WIN_OBF_HASH\";
           if cmp -s \"\$WIN_PLAIN/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\" \"\$WIN_OBF/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\"; then
             echo 'Rust Windows binary unchanged under obfuscation flags' >&2
             exit 1
@@ -124,6 +136,10 @@ jobs:
           OBF_FLAGS=\"${{ env.OLLVM_FLAGS }}\";
           clang -O2 /tests/linux_glibc.c -o /tmp/linux_plain;
           clang \$OBF_FLAGS /tests/linux_glibc.c -O2 -o /artifacts/linux_glibc;
+          GLIBC_PLAIN_HASH=\"\$(sha256sum /tmp/linux_plain | awk '{print \$1}')\";
+          GLIBC_OBF_HASH=\"\$(sha256sum /artifacts/linux_glibc | awk '{print \$1}')\";
+          echo \"glibc plain hash: \$GLIBC_PLAIN_HASH\";
+          echo \"glibc obf hash:   \$GLIBC_OBF_HASH\";
           if cmp -s /tmp/linux_plain /artifacts/linux_glibc; then
             echo 'glibc binary unchanged under obfuscation flags' >&2
             exit 1
@@ -131,6 +147,10 @@ jobs:
           /artifacts/linux_glibc;
           clang --target=x86_64-linux-musl -isystem /usr/include/x86_64-linux-musl -L/usr/lib/x86_64-linux-musl -static -O2 /tests/linux_glibc.c -o /tmp/linux_musl_plain;
           clang --target=x86_64-linux-musl -isystem /usr/include/x86_64-linux-musl -L/usr/lib/x86_64-linux-musl -static \$OBF_FLAGS /tests/linux_glibc.c -O2 -o /artifacts/linux_musl;
+          MUSL_PLAIN_HASH=\"\$(sha256sum /tmp/linux_musl_plain | awk '{print \$1}')\";
+          MUSL_OBF_HASH=\"\$(sha256sum /artifacts/linux_musl | awk '{print \$1}')\";
+          echo \"musl plain hash: \$MUSL_PLAIN_HASH\";
+          echo \"musl obf hash:   \$MUSL_OBF_HASH\";
           if cmp -s /tmp/linux_musl_plain /artifacts/linux_musl; then
             echo 'musl binary unchanged under obfuscation flags' >&2
             exit 1
@@ -149,6 +169,10 @@ jobs:
           OBF_FLAGS=\"${{ env.OLLVM_FLAGS }}\";
           x86_64-w64-mingw32-clang -O2 /tests/windows_hello.c -o /tmp/windows_plain.exe -luser32;
           x86_64-w64-mingw32-clang \$OBF_FLAGS /tests/windows_hello.c -O2 -o /artifacts/windows_hello.exe -luser32;
+          WINC_PLAIN_HASH=\"\$(sha256sum /tmp/windows_plain.exe | awk '{print \$1}')\";
+          WINC_OBF_HASH=\"\$(sha256sum /artifacts/windows_hello.exe | awk '{print \$1}')\";
+          echo \"Windows C plain hash: \$WINC_PLAIN_HASH\";
+          echo \"Windows C obf hash:   \$WINC_OBF_HASH\";
           if cmp -s /tmp/windows_plain.exe /artifacts/windows_hello.exe; then
             echo 'Windows binary unchanged under obfuscation flags' >&2
             exit 1
