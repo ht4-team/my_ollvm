@@ -50,8 +50,13 @@ jobs:
           if [[ "$REBUILD" == "true" ]]; then
             USE_CACHE=false
           fi
+          BASE_IMAGE="${{ env.REGISTRY_IMAGE }}:latest"
+          if [[ "$REBUILD" == "true" ]]; then
+            BASE_IMAGE="ubuntu:22.04"
+          fi
           echo "rebuild=$REBUILD" >> "$GITHUB_OUTPUT"
           echo "use_cache=$USE_CACHE" >> "$GITHUB_OUTPUT"
+          echo "base_image=$BASE_IMAGE" >> "$GITHUB_OUTPUT"
 
       - name: Skip non-release builds
         if: ${{ steps.publish.outputs.push_image != 'true' }}
@@ -64,7 +69,7 @@ jobs:
       - name: Warm registry cache
         if: ${{ steps.publish.outputs.push_image == 'true' && steps.strategy.outputs.use_cache == 'true' }}
         continue-on-error: true
-        run: docker pull ${{ env.REGISTRY_IMAGE }}:latest
+        run: docker pull ${{ steps.strategy.outputs.base_image }}
 
       - name: Set up Docker Buildx
         if: ${{ steps.publish.outputs.push_image == 'true' }}
@@ -100,7 +105,10 @@ jobs:
             type=registry,ref=${{ env.REGISTRY_IMAGE }}:latest
             type=gha,scope=ollvm-build
           cache-to: type=gha,scope=ollvm-build,mode=max
-          build-args: BUILDKIT_INLINE_CACHE=1
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            BASE_IMAGE=${{ steps.strategy.outputs.base_image }}
+            REBUILD_FROM_SOURCE=${{ steps.strategy.outputs.rebuild }}
           no-cache: ${{ steps.strategy.outputs.rebuild == 'true' }}
         env:
           SOURCE_DATE_EPOCH: 0
