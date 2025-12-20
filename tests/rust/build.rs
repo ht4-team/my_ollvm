@@ -11,7 +11,7 @@ fn main() {
     build.flag("-O2");
     build.flag("-fvisibility=hidden");
     build.flag("-fno-plt");
-    build.define("OLLVM_MARK_STR", Some(&mark));
+    build.define("OLLVM_MARK_STR", Some(mark.as_str()));
 
     if let Ok(extra) = env::var("OLLVM_EXTRA_FLAGS") {
         for flag in extra.split_whitespace().filter(|s| !s.is_empty()) {
