@@ -88,6 +88,7 @@ jobs:
             echo 'Rust GNU binary unchanged under obfuscation flags' >&2
             exit 1
           fi;
+          cp \"\$GNU_PLAIN/release/ollvm-smoke\" /artifacts/rust-linux-gnu-plain;
           cp \"\$GNU_OBF/release/ollvm-smoke\" /artifacts/rust-linux-gnu;
           MUSL_PLAIN=/tmp/rust_plain_musl;
           MUSL_OBF=/tmp/rust_obf_musl;
@@ -101,6 +102,7 @@ jobs:
             echo 'Rust musl binary unchanged under obfuscation flags' >&2
             exit 1
           fi;
+          cp \"\$MUSL_PLAIN/x86_64-unknown-linux-musl/release/ollvm-smoke\" /artifacts/rust-linux-musl-plain;
           cp \"\$MUSL_OBF/x86_64-unknown-linux-musl/release/ollvm-smoke\" /artifacts/rust-linux-musl;
           if ! command -v /usr/bin/x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
             echo 'Missing mingw toolchain in image; rebuild base image instead of installing ad-hoc packages.' >&2
@@ -122,6 +124,7 @@ jobs:
             echo 'Rust Windows binary unchanged under obfuscation flags' >&2
             exit 1
           fi;
+          cp \"\$WIN_PLAIN/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\" /artifacts/rust-windows-plain.exe;
           cp \"\$WIN_OBF/x86_64-pc-windows-gnu/release/ollvm-smoke.exe\" /artifacts/rust-windows.exe"
 
       - name: Linux glibc and musl build
@@ -144,6 +147,7 @@ jobs:
             echo 'glibc binary unchanged under obfuscation flags' >&2
             exit 1
           fi;
+          cp /tmp/linux_plain /artifacts/linux_glibc_plain;
           /artifacts/linux_glibc;
           clang --target=x86_64-linux-musl -isystem /usr/include/x86_64-linux-musl -L/usr/lib/x86_64-linux-musl -static -O2 /tests/linux_glibc.c -o /tmp/linux_musl_plain;
           clang --target=x86_64-linux-musl -isystem /usr/include/x86_64-linux-musl -L/usr/lib/x86_64-linux-musl -static \$OBF_FLAGS /tests/linux_glibc.c -O2 -o /artifacts/linux_musl;
@@ -155,6 +159,7 @@ jobs:
             echo 'musl binary unchanged under obfuscation flags' >&2
             exit 1
           fi;
+          cp /tmp/linux_musl_plain /artifacts/linux_musl_plain;
           /artifacts/linux_musl"
 
       - name: Windows mingw build
@@ -177,6 +182,7 @@ jobs:
             echo 'Windows binary unchanged under obfuscation flags' >&2
             exit 1
           fi;
+          cp /tmp/windows_plain.exe /artifacts/windows_hello_plain.exe;
           llvm-readobj --file-headers /artifacts/windows_hello.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_AMD64'"
 
       - name: Upload artifacts
