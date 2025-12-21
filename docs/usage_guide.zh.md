@@ -3,6 +3,19 @@
 > 镜像：`zhangdafei1995/my_ollvm`  
 > 适用：Linux（glibc/musl）、Windows（MinGW）、Rust 并启用 OLLVM 混淆
 
+## 0. 镜像内容概览
+
+| 组件 | 路径/说明 |
+| ---- | -------- |
+| Linux OLLVM Clang/LLD | `/opt/ollvm-linux/bin/clang{,++}`，基于 sr-tream/obfuscator 的 LLVM 18，支持 `-mllvm -fla/-bcf/-split/-sobf` 等所有 pass |
+| llvm-mingw 交叉工具链 | `/opt/llvm-mingw/bin/x86_64-w64-mingw32-{clang,clang++}`，默认链接 UCRT，自带 `llvm-ar/llvm-rc` |
+| Musl 头文件与静态库 | `/usr/include/x86_64-linux-musl`、`/usr/lib/x86_64-linux-musl`，便于生成静态二进制 |
+| Rust + rustup | `/opt/cargo/bin`，预装目标：`x86_64-unknown-linux-gnu/musl`、`x86_64-pc-windows-gnu`，以及 cargo/llvm-tools-preview |
+| 常用构建工具 | `cmake`、`ninja`、`pkg-config`、`python3`、`git`、`yasm`、`gettext`、`autopoint` |
+| 其他跨平台依赖 | `mingw-w64` 全套（含 `gcc-mingw-w64-{x86-64,i686}`、`binutils-*`、`mingw-w64-common`）、`musl-dev`、`musl-tools`、`patchelf`、`rsync` 等 |
+
+> **提示**：GitHub Actions 的 `build.yml` 默认以最新 `zhangdafei1995/my_ollvm:latest` 作为 Base image，只在 `v*-full` 标签或手动传入 `rebuild_from_scratch=true` 时才全量编译，因而你在自定义镜像时也可以采用同样的继承策略。
+
 ## 1. 运行前准备
 
 1. 安装 Docker 24+，并配置好可以访问 Docker Hub 的网络。
