@@ -61,6 +61,13 @@ jobs:
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         run: docker pull ${{ env.REGISTRY_IMAGE }}:${{ env.TEST_IMAGE_TAG }}
 
+      - name: Verify UPX availability
+        if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
+        run: >
+          docker run --rm
+          ${{ env.REGISTRY_IMAGE }}:${{ env.TEST_IMAGE_TAG }}
+          bash -lc "set -euo pipefail; upx --version && upx -qq --help >/dev/null"
+
       - name: Rust toolchain builds
         if: ${{ steps.smoke.outputs.run_smoke == 'true' }}
         run: >-
