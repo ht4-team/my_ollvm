@@ -6,6 +6,7 @@ Unified OLLVM toolchain image that bundles:
 - Prebuilt `llvm-mingw` distribution patched with sr-tream/obfuscator so every compilation pass supports OLLVM options.
 - Rust toolchain with linux-musl, linux-gnu and `x86_64-pc-windows-gnu` targets, ready for cross builds.
 - Musl toolchain and headers so Linux binaries can be shipped with fully static runtimes for maximum compatibility.
+- System helpers such as `upx` (with `--best --lzma` support) baked into the image so downstream workflows无需重复安装。
 
 ## Building & publishing (GitHub Actions)
 
