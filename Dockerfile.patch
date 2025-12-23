@@ -99,11 +99,9 @@ index 550db90..aec72d6 100644
 +      rm -rf /var/lib/apt/lists/*; \
 +    fi
 +
-+RUN if ! command -v upx >/dev/null 2>&1; then \
-+      apt-get update -qq && \
-+      DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends upx-ucl && \
-+      apt-get clean -y && \
-+      rm -rf /var/lib/apt/lists/*; \
-+    fi
++RUN apt-get update -qq && \
++    DEBIAN_FRONTEND="noninteractive" apt-get install -qqy --no-install-recommends upx upx-ucl && \
++    apt-get clean -y && \
++    rm -rf /var/lib/apt/lists/*
 +
 +ENV PATH=$LINUX_LLVM_PREFIX/bin:$TOOLCHAIN_PREFIX/bin:$CARGO_HOME/bin:$PATH
